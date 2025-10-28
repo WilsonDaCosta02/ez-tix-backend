@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 
-// REGISTER
+// REGISTER USER (default role user)
 const register = async (req, res) => {
   try {
     const { namaPengguna, email, kataSandi } = req.body;
@@ -14,16 +14,49 @@ const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(kataSandi, 10);
 
-    const newUser = new User({ namaPengguna, email, kataSandi: hashedPassword });
+    const newUser = new User({
+      namaPengguna,
+      email,
+      kataSandi: hashedPassword,
+      role: "user" // selalu user
+    });
+
     await newUser.save();
 
-    res.status(201).json({ message: "Registrasi berhasil" });
+    res.status(201).json({ message: "Registrasi user berhasil", user: newUser });
   } catch (err) {
-    res.status(500).json({ message: "Terjadi kesalahan server", error: err });
+    res.status(500).json({ message: "Terjadi kesalahan server", error: err.message });
   }
 };
 
-// LOGIN
+// REGISTER ADMIN (khusus, jangan tampilkan di UI publik)
+const registerAdmin = async (req, res) => {
+  try {
+    const { namaPengguna, email, kataSandi } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email sudah terdaftar" });
+    }
+
+    const hashedPassword = await bcrypt.hash(kataSandi, 10);
+
+    const newAdmin = new User({
+      namaPengguna,
+      email,
+      kataSandi: hashedPassword,
+      role: "admin"
+    });
+
+    await newAdmin.save();
+
+    res.status(201).json({ message: "Registrasi admin berhasil", user: newAdmin });
+  } catch (err) {
+    res.status(500).json({ message: "Terjadi kesalahan server", error: err.message });
+  }
+};
+
+// LOGIN (tetap sama)
 const login = async (req, res) => {
   try {
     const { email, kataSandi } = req.body;
@@ -44,18 +77,18 @@ const login = async (req, res) => {
 
     // generate JWT
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "2m" }
+      { expiresIn: "5m" }
     );
 
     res.json({
       message: "Login berhasil",
       token,
-      user: { id: user._id, namaPengguna: user.namaPengguna, email: user.email }
+      user: { id: user._id, namaPengguna: user.namaPengguna, email: user.email, role: user.role }
     });
   } catch (err) {
-    res.status(500).json({ message: "Terjadi kesalahan server", error: err });
+    res.status(500).json({ message: "Terjadi kesalahan server", error: err.message });
   }
 };
 
@@ -137,4 +170,4 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, resetPassword, getProfile, updateProfile };
+module.exports = { register, registerAdmin, login, resetPassword, getProfile, updateProfile };
