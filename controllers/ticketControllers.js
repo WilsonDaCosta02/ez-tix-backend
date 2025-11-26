@@ -5,48 +5,63 @@ const QRCode = require("qrcode"); // ✅ import qrcode
 // BELI TIKET
 const buyTicket = async (req, res) => {
   try {
-    // Cek role user
     if (req.user.role === "admin") {
       return res.status(403).json({ message: "Admin tidak bisa membeli tiket" });
     }
 
-    const { eventId, jumlah } = req.body;
+    const { eventId, jumlah, namaLengkap, email, paymentMethod, nomorAkun } = req.body;
 
-    const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: "Event tidak ditemukan" });
+    // ubah jumlah ke integer
+    const qty = parseInt(jumlah, 10);
 
-    // ✅ Cek apakah user sudah membeli tiket event ini
-    const existing = await Ticket.findOne({ user: req.user.id, event: eventId });
-    if (existing) {
-      return res.status(400).json({ message: "Anda sudah membeli tiket untuk event ini" });
+    // validasi basic form
+    if (!namaLengkap || !email) {
+      return res.status(400).json({ message: "Nama lengkap dan email wajib diisi" });
     }
 
-    // ✅ Cek kapasitas/sold out
+    if (!paymentMethod || !nomorAkun) {
+      return res.status(400).json({ message: "Metode pembayaran dan nomor akun wajib diisi" });
+    }
+
+    if (!qty || qty <= 0) {
+      return res.status(400).json({ message: "Jumlah tiket harus lebih dari 0" });
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event tidak ditemukan" });
+    }
+
     if (event.kapasitas <= 0) {
       return res.status(400).json({ message: "Tiket sudah habis" });
     }
 
-    if (jumlah > event.kapasitas) {
+    if (qty > event.kapasitas) {
       return res.status(400).json({ message: "Jumlah tiket melebihi kapasitas" });
     }
 
-    const totalHarga = jumlah * event.hargaTiket;
+    const totalHarga = qty * event.hargaTiket;
 
     const ticket = new Ticket({
       event: event._id,
       user: req.user.id,
-      jumlah,
-      totalHarga
+
+      namaPemesan: namaLengkap,
+      emailPemesan: email,
+
+      jumlah: qty,
+      totalHarga,
+
+      paymentMethod,
+      nomorAkun
     });
     await ticket.save();
 
-    // ✅ Generate QR code
     const qrData = await QRCode.toDataURL(`${ticket._id}`);
     ticket.qrCode = qrData;
     await ticket.save();
 
-    // Kurangi kapasitas event
-    event.kapasitas -= jumlah;
+    event.kapasitas -= qty;
     await event.save();
 
     res.status(201).json({ message: "Tiket berhasil dibeli", ticket });

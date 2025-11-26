@@ -1,20 +1,29 @@
 const Event = require("../models/Event");
+const QRCode = require("qrcode");   // ⬅️ tambah ini
 
 // ===========================
 // 🟢 CREATE EVENT
 // ===========================
 const createEvent = async (req, res) => {
   try {
-    const { namaEvent, deskripsi, tanggal, lokasi, kapasitas, hargaTiket, gambar } = req.body;
+    const {
+      namaEvent,
+      deskripsi,
+      tanggal,
+      lokasi,
+      kapasitas,
+      hargaTiket,
+      penyelenggara,
+      gambar,
+    } = req.body;
 
-    // Kalau ada file upload, ambil dari multer
     const gambarPath = req.file ? `/uploads/${req.file.filename}` : gambar || null;
 
-    // Validasi dasar
-    if (!namaEvent || !tanggal || !lokasi || !kapasitas || !hargaTiket) {
+    if (!namaEvent || !tanggal || !lokasi || !kapasitas || !hargaTiket || !penyelenggara) {
       return res.status(400).json({ message: "Semua field wajib diisi" });
     }
 
+    // 1. Buat event dulu
     const event = new Event({
       namaEvent,
       deskripsi,
@@ -23,13 +32,23 @@ const createEvent = async (req, res) => {
       kapasitas,
       hargaTiket,
       gambar: gambarPath,
-      penyelenggara: req.user.id
+      penyelenggara,
     });
 
     await event.save();
+
+    // 2. Generate QR Code berbasis eventId
+    //    isi QR bebas, di sini pakai format "event:<id>"
+    const qrString = `event:${event._id.toString()}`;
+    const qrImage = await QRCode.toDataURL(qrString);
+
+    // 3. Simpan QR ke field qrCode
+    event.qrCode = qrImage;
+    await event.save();
+
     res.status(201).json({ message: "Event berhasil dibuat", event });
-  } catch (err) {
-    res.status(500).json({ message: "Terjadi kesalahan server", error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: "Terjadi kesalahan server", error: error.message });
   }
 };
 
@@ -39,24 +58,37 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { namaEvent, deskripsi, tanggal, lokasi, kapasitas, hargaTiket, gambar } = req.body;
+    const {
+      namaEvent,
+      deskripsi,
+      tanggal,
+      lokasi,
+      kapasitas,
+      hargaTiket,
+      penyelenggara,
+      gambar,
+    } = req.body;
 
-    // Ambil gambar baru kalau diupload
-    const gambarPath = req.file ? `/uploads/${req.file.filename}` : gambar;
+    const gambarPath = req.file ? `/uploads/${req.file.filename}` : gambar || null;
 
-    const updatedEvent = await Event.findByIdAndUpdate(
-      id,
-      {
-        namaEvent,
-        deskripsi,
-        tanggal,
-        lokasi,
-        kapasitas,
-        hargaTiket,
-        ...(gambarPath && { gambar: gambarPath })
-      },
-      { new: true, runValidators: true }
-    );
+    const dataToUpdate = {
+      namaEvent,
+      deskripsi,
+      tanggal,
+      lokasi,
+      kapasitas,
+      hargaTiket,
+      penyelenggara,
+    };
+
+    if (gambarPath) {
+      dataToUpdate.gambar = gambarPath;
+    }
+
+    const updatedEvent = await Event.findByIdAndUpdate(id, dataToUpdate, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedEvent) {
       return res.status(404).json({ message: "Event tidak ditemukan" });
@@ -91,7 +123,7 @@ const deleteEvent = async (req, res) => {
 // ===========================
 const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().populate("penyelenggara", "namaPengguna email");
+    const events = await Event.find(); // ⬅️ TANPA populate
     res.json({ events });
   } catch (err) {
     res.status(500).json({ message: "Terjadi kesalahan server", error: err.message });
@@ -100,7 +132,7 @@ const getAllEvents = async (req, res) => {
 
 const getEventById = async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id).populate("penyelenggara", "namaPengguna email");
+    const event = await Event.findById(req.params.id); // ⬅️ TANPA populate
     if (!event) return res.status(404).json({ message: "Event tidak ditemukan" });
 
     res.json({ event });
