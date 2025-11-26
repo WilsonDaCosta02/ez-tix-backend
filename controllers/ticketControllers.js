@@ -88,25 +88,61 @@ const buyTicket = async (req, res) => {
         to: ticket.emailPemesan,
         subject: `E-Ticket ${event.namaEvent}`,
         html: `
-          <h2>Terima kasih, kamu berhasil membeli tiket!</h2>
-          <p>Berikut detail pesananmu:</p>
-          <ul>
-            <li><b>Nama Event:</b> ${event.namaEvent}</li>
-            <li><b>Tanggal:</b> ${event.tanggal.toDateString()}</li>
-            <li><b>Lokasi:</b> ${event.lokasi}</li>
-            <li><b>Nama Pemesan:</b> ${ticket.namaPemesan}</li>
-            <li><b>Jumlah Tiket:</b> ${ticket.jumlah}</li>
-            <li><b>Total Bayar:</b> Rp ${ticket.totalHarga.toLocaleString("id-ID")}</li>
-            <li><b>Metode Pembayaran:</b> ${ticket.paymentMethod}</li>
-          </ul>
-          <p>Silakan tunjukkan QR code berikut saat check-in di lokasi event:</p>
+          <div style="
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: auto;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 10px;
+            background: #fafafa;
+          ">
 
-          <!-- perhatikan: pakai cid, bukan data:image -->
-          <img src="cid:qr-ticket-${ticket._id}" alt="QR Code Ticket" />
+            <h2 style="text-align:center; color:#333;">
+              🎉 Tiket Kamu Berhasil Dibeli!
+            </h2>
 
-          <p>ID Tiket: ${ticket._id}</p>
-          <p>QR ini berlaku untuk <b>${ticket.jumlah} orang</b>. Mohon datang bersama saat check-in.</p>
-        `,
+            <p style="font-size:14px; color:#555;">
+              Berikut detail pesananmu:
+            </p>
+
+            <div style="
+              background:#fff;
+              padding:15px;
+              border-radius:8px;
+              border:1px solid #ddd;
+            ">
+              <p><b>Nama Event:</b> ${event.namaEvent}</p>
+              <p><b>Tanggal:</b> ${event.tanggal.toDateString()}</p>
+              <p><b>Lokasi:</b> ${event.lokasi}</p>
+              <p><b>Nama Pemesan:</b> ${ticket.namaPemesan}</p>
+              <p><b>Jumlah Tiket:</b> ${ticket.jumlah}</p>
+              <p><b>Total Bayar:</b> Rp ${ticket.totalHarga.toLocaleString("id-ID")}</p>
+              <p><b>Metode Pembayaran:</b> ${ticket.paymentMethod}</p>
+            </div>
+
+            <h3 style="margin-top:25px; color:#333;">QR Code Check-in</h3>
+            <p style="font-size:14px; color:#555;">Tunjukkan QR berikut saat check-in:</p>
+
+            <div style="text-align:center; margin:20px 0;">
+              <img src="cid:qr-ticket-${ticket._id}"
+                  alt="QR Code Ticket"
+                  style="width:200px; height:200px;" />
+            </div>
+
+            <p style="font-size:14px; color:#444;">
+              <b>ID Tiket:</b> ${ticket._id} <br/>
+              QR ini berlaku untuk <b>${ticket.jumlah} orang</b>. Mohon datang bersama saat check-in.
+            </p>
+
+            <hr style="margin-top:30px;"/>
+            <p style="font-size:12px; text-align:center; color:#888;">
+              Email ini dikirim otomatis oleh sistem Ez-Tix. Jangan membalas email ini.
+            </p>
+
+          </div>
+        `
+        ,
         attachments: [
           {
             filename: `ticket-${ticket._id}.png`,
