@@ -5,8 +5,8 @@ const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 
 // Public routes
-router.post("/register", register);         // default user
-router.post("/register-admin", registerAdmin); // khusus admin
+router.post("/register", register);
+router.post("/register-admin", registerAdmin);
 router.post("/login", login);
 router.post("/reset-password", resetPassword);
 
