@@ -3,6 +3,12 @@ const Event = require("../models/Event");
 const QRCode = require("qrcode"); // ✅ import qrcode
 const nodemailer = require("nodemailer");
 
+const fs = require("fs");
+const path = require("path");
+
+const logoPath = path.join(__dirname, "../assets/logo.png");
+const logoBuffer = fs.readFileSync(logoPath);
+
 // transporter email (sekali buat, dipakai semua request)
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -83,6 +89,18 @@ const buyTicket = async (req, res) => {
 
     // 4. Kirim email e-ticket ke pembeli
     try {
+
+      const tanggalEvent = new Date(event.tanggal);
+
+    // tanggal saja, tanpa jam
+    const tanggalIndonesia = tanggalEvent.toLocaleDateString("id-ID", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+
       await transporter.sendMail({
         from: `"Ez-Tix" <${process.env.EMAIL_USER}>`,
         to: ticket.emailPemesan,
@@ -98,9 +116,15 @@ const buyTicket = async (req, res) => {
             background: #fafafa;
           ">
 
-            <h2 style="text-align:center; color:#333;">
-              🎉 Tiket Kamu Berhasil Dibeli!
-            </h2>
+            <div style="text-align:center; margin-bottom:5px; margin-top:10px;">
+            <img src="cid:logo-eztix"
+                alt="Ez-Tix Logo"
+                style="width:160px; height:auto;" />
+          </div>
+
+          <h2 style="text-align:center; color:#333; margin-top:5px; margin-bottom:20px;">
+            Tiket Kamu Berhasil Dibeli!
+          </h2>
 
             <p style="font-size:14px; color:#555;">
               Berikut detail pesananmu:
@@ -113,7 +137,8 @@ const buyTicket = async (req, res) => {
               border:1px solid #ddd;
             ">
               <p><b>Nama Event:</b> ${event.namaEvent}</p>
-              <p><b>Tanggal:</b> ${event.tanggal.toDateString()}</p>
+              <p><b>Tanggal:</b> ${tanggalIndonesia}</p>
+              <p><b>Waktu:</b> ${event.waktu}</p>
               <p><b>Lokasi:</b> ${event.lokasi}</p>
               <p><b>Nama Pemesan:</b> ${ticket.namaPemesan}</p>
               <p><b>Jumlah Tiket:</b> ${ticket.jumlah}</p>
@@ -144,12 +169,20 @@ const buyTicket = async (req, res) => {
         `
         ,
         attachments: [
-          {
-            filename: `ticket-${ticket._id}.png`,
-            content: qrBuffer,                // buffer dari QRCode.toBuffer()
-            cid: `qr-ticket-${ticket._id}`,   // harus sama dengan yang di src="cid:..."
-          },
-        ],
+    // QR Ticket
+    {
+      filename: `ticket-${ticket._id}.png`,
+      content: qrBuffer,
+      cid: `qr-ticket-${ticket._id}`,
+    },
+    // Logo Ez-Tix
+    {
+      filename: "logo-eztix.png",
+      content: logoBuffer,
+      cid: "logo-eztix"
+    }
+]
+
       });
 
     } catch (emailErr) {
@@ -172,7 +205,7 @@ const buyTicket = async (req, res) => {
 const getMyTickets = async (req, res) => {
   try {
     const tickets = await Ticket.find({ user: req.user.id })
-      .populate("event", "namaEvent tanggal lokasi gambar");
+      .populate("event", "namaEvent tanggal waktu lokasi gambar");
     res.json({ tickets });
   } catch (err) {
     res.status(500).json({ message: "Terjadi kesalahan server", error: err.message });

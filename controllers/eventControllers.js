@@ -10,6 +10,7 @@ const createEvent = async (req, res) => {
       namaEvent,
       deskripsi,
       tanggal,
+      waktu,          // ➕ ambil waktu dari body
       lokasi,
       kapasitas,
       hargaTiket,
@@ -19,15 +20,15 @@ const createEvent = async (req, res) => {
 
     const gambarPath = req.file ? `/uploads/${req.file.filename}` : gambar || null;
 
-    if (!namaEvent || !tanggal || !lokasi || !kapasitas || !hargaTiket || !penyelenggara) {
+    if (!namaEvent || !tanggal || !waktu || !lokasi || !kapasitas || !hargaTiket || !penyelenggara) {
       return res.status(400).json({ message: "Semua field wajib diisi" });
     }
 
-    // 1. Buat event dulu
     const event = new Event({
       namaEvent,
       deskripsi,
       tanggal,
+      waktu,        // ➕ simpan waktu
       lokasi,
       kapasitas,
       hargaTiket,
@@ -62,6 +63,7 @@ const updateEvent = async (req, res) => {
       namaEvent,
       deskripsi,
       tanggal,
+      waktu,          // ➕ ambil waktu
       lokasi,
       kapasitas,
       hargaTiket,
@@ -75,6 +77,7 @@ const updateEvent = async (req, res) => {
       namaEvent,
       deskripsi,
       tanggal,
+      waktu,        // ➕ update waktu
       lokasi,
       kapasitas,
       hargaTiket,

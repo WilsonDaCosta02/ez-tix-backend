@@ -5,6 +5,7 @@ const eventRoutes = require("./routes/event");
 const ticketRoutes = require("./routes/ticket");
 const path = require("path");
 const userRoutes = require("./routes/users");
+const statsRoutes = require("./routes/statsRoutes");
 
 
 const app = express();
@@ -20,5 +21,8 @@ app.use("/api/users", userRoutes);
 
 // upload images
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+app.use("/api/stats", statsRoutes);
+
 
 module.exports = app;

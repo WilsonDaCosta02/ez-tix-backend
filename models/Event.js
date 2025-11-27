@@ -5,12 +5,16 @@ const eventSchema = new mongoose.Schema(
     namaEvent: { type: String, required: true },
     deskripsi: { type: String },
     tanggal: { type: Date, required: true },
+
+    // ➕ TAMBAH INI
+    waktu: { type: String, required: true }, // contoh: "09.00 WITA" atau "19.30 WIB"
+
     lokasi: { type: String, required: true },
     kapasitas: { type: Number, required: true },
     hargaTiket: { type: Number, required: true },
-    gambar: { type: String },      // URL / path poster
-    penyelenggara: { type: String, required: true }, // nama klien
-    qrCode: { type: String },      // 👉 base64 gambar QR event
+    gambar: { type: String },
+    penyelenggara: { type: String, required: true },
+    qrCode: { type: String },
   },
   { timestamps: true }
 );
