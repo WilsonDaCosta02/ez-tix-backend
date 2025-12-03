@@ -20,6 +20,11 @@ const ticketSchema = new mongoose.Schema({
   nomorAkun: { type: String, required: true },
 
   qrCode: { type: String }, // QR untuk check-in
+
+  // 🔥 FIELD CHECK-IN
+    isCheckedIn: { type: Boolean, default: false },
+    checkInTime: { type: Date },
+    checkInBy:   { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // admin yg scan
 }, { timestamps: true });
 
 module.exports = mongoose.model("Ticket", ticketSchema);

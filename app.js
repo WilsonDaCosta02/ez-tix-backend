@@ -21,7 +21,7 @@ app.use("/api/users", userRoutes);
 
 // upload images
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
+app.use("/api/checkin", require("./routes/checkinRoutes"));
 app.use("/api/stats", statsRoutes);
 
 

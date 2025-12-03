@@ -100,6 +100,10 @@ const buyTicket = async (req, res) => {
       day: "numeric",
     });
 
+    const infoJumlahOrang = ticket.jumlah > 1 
+    ? `QR ini berlaku untuk <b>${ticket.jumlah} orang</b>. Mohon datang bersama saat check-in.` 
+    : ``;
+
 
       await transporter.sendMail({
         from: `"Ez-Tix" <${process.env.EMAIL_USER}>`,
@@ -157,7 +161,7 @@ const buyTicket = async (req, res) => {
 
             <p style="font-size:14px; color:#444;">
               <b>ID Tiket:</b> ${ticket._id} <br/>
-              QR ini berlaku untuk <b>${ticket.jumlah} orang</b>. Mohon datang bersama saat check-in.
+              ${infoJumlahOrang}
             </p>
 
             <hr style="margin-top:30px;"/>
