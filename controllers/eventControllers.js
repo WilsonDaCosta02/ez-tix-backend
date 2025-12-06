@@ -156,6 +156,29 @@ const getAllEvents = async (req, res) => {
 };
 
 // ===========================
+// 🟣 GET SEMUA EVENTS (HALAMAN "ACARA")
+// ===========================
+const getAllEventsForAcaraPage = async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Semua event yang belum lewat, TANPA exclude 3 rekomendasi
+    const events = await Event.find({
+      tanggal: { $gte: today },
+    }).sort({ tanggal: 1 });   // urut dari tanggal terdekat
+
+    res.json({ events });
+  } catch (err) {
+    res.status(500).json({
+      message: "Terjadi kesalahan server",
+      error: err.message,
+    });
+  }
+};
+
+
+// ===========================
 // 🟣 GET EVENT BY ID
 // ===========================
 const getEventById = async (req, res) => {
@@ -203,4 +226,4 @@ const getRecommendedEvents = async (req, res) => {
 };
 
 
-module.exports = { createEvent, updateEvent, deleteEvent, getAllEvents, getEventById, getRecommendedEvents };
+module.exports = { createEvent, updateEvent, deleteEvent, getAllEvents, getEventById, getRecommendedEvents, getAllEventsForAcaraPage };

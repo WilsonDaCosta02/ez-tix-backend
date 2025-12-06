@@ -24,8 +24,8 @@ exports.scanTicket = async (req, res) => {
         .json({ message: "Tiket tidak ditemukan atau QR tidak valid" });
     }
 
-    // sudah pernah dipakai?
-    if (ticket.isCheckedIn) {
+    // ✅ pakai statusCheckIn (bukan isCheckedIn lagi)
+    if (ticket.statusCheckIn) {
       return res.status(400).json({
         message: "Tiket sudah pernah digunakan untuk check-in",
         status: "SUDAH_CHECKIN",
@@ -34,15 +34,16 @@ exports.scanTicket = async (req, res) => {
           email: ticket.emailPemesan,
           jumlah: ticket.jumlah,
           event: ticket.event,
-          checkInTime: ticket.checkInTime,
+          checkInTime: ticket.checkInAt, // pakai checkInAt
         },
       });
     }
 
-    // tandai sebagai check-in
-    ticket.isCheckedIn = true;
-    ticket.checkInTime = new Date();
-    ticket.checkInBy = req.user.id; // admin yg sedang login
+    // ✅ tandai sebagai check-in
+    ticket.statusCheckIn = true;
+    ticket.checkInAt = new Date();
+    // kalau mau simpan admin yang scan, tambahin field checkInBy di schema dulu
+    // ticket.checkInBy = req.user.id;
     await ticket.save();
 
     return res.json({
@@ -52,8 +53,8 @@ exports.scanTicket = async (req, res) => {
         ticketId: ticket._id,
         email: ticket.emailPemesan,
         jumlah: ticket.jumlah,
-        event: ticket.event, // di sini sudah ada nama event dll
-        checkInTime: ticket.checkInTime,
+        event: ticket.event,
+        checkInTime: ticket.checkInAt,
       },
     });
   } catch (err) {
@@ -74,14 +75,13 @@ exports.getCheckinListByEvent = async (req, res) => {
 
     const query = {
       event: eventId,
-      isCheckedIn: true,
+      statusCheckIn: true, // ✅ ganti isCheckedIn → statusCheckIn
     };
 
-    // opsional: pencarian di kolom email / id tiket
     if (search) {
       query.$or = [
         { emailPemesan: { $regex: search, $options: "i" } },
-        { _id: search }, // kalau admin ketik kode tiket langsung
+        { _id: search },
       ];
     }
 
@@ -91,10 +91,10 @@ exports.getCheckinListByEvent = async (req, res) => {
 
     const [items, total] = await Promise.all([
       Ticket.find(query)
-        .sort({ checkInTime: -1 })
+        .sort({ checkInAt: -1 }) // ✅ pakai checkInAt
         .skip(skip)
         .limit(limitNum)
-        .select("_id emailPemesan jumlah checkInTime"),
+        .select("_id emailPemesan jumlah checkInAt"),
       Ticket.countDocuments(query),
     ]);
 
@@ -106,7 +106,7 @@ exports.getCheckinListByEvent = async (req, res) => {
         ticketId: t._id,
         email: t.emailPemesan,
         jumlah: t.jumlah,
-        checkInTime: t.checkInTime,
+        checkInTime: t.checkInAt,
         status: "Check-in Berhasil",
       })),
     });
