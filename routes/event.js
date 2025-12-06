@@ -1,5 +1,5 @@
 const express = require("express");
-const { createEvent, updateEvent, deleteEvent, getAllEvents, getEventById } = require("../controllers/eventControllers");
+const { createEvent, updateEvent, deleteEvent, getAllEvents, getEventById, getRecommendedEvents } = require("../controllers/eventControllers");
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 const upload = require("../middleware/uploadMiddleware");
@@ -8,6 +8,9 @@ const router = express.Router();
 
 // Public
 router.get("/", getAllEvents);
+
+router.get("/recommendation", getRecommendedEvents);
+
 router.get("/:id", getEventById);
 
 // Admin create event with image
