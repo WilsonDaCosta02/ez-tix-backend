@@ -85,7 +85,7 @@ const login = async (req, res) => {
     res.json({
       message: "Login berhasil",
       token,
-      user: { id: user._id, namaPengguna: user.namaPengguna, email: user.email, role: user.role }
+      user: { id: user._id, namaPengguna: user.namaPengguna, email: user.email, role: user.role, profilePicture: user.profilePicture || null, }
     });
   } catch (err) {
     res.status(500).json({ message: "Terjadi kesalahan server", error: err.message });
@@ -141,9 +141,14 @@ const getProfile = async (req, res) => {
   }
 };
 
-// UPDATE PROFILE (protected)
+// UPDATE PROFILE (protected, khusus USER)
 const updateProfile = async (req, res) => {
   try {
+    // admin tidak boleh update profil di sini
+    if (req.user.role !== "user") {
+      return res.status(403).json({ message: "Admin tidak bisa mengubah profil di endpoint ini" });
+    }
+
     const { namaPengguna } = req.body;
 
     const user = await User.findById(req.user.id);
@@ -151,8 +156,14 @@ const updateProfile = async (req, res) => {
       return res.status(404).json({ message: "User tidak ditemukan" });
     }
 
+    // update nama jika dikirim
     if (namaPengguna) {
       user.namaPengguna = namaPengguna;
+    }
+
+    // update foto kalau FE kirim file (pakai multer di route)
+    if (req.file) {
+      user.profilePicture = `/uploads/${req.file.filename}`;
     }
 
     await user.save();
@@ -162,11 +173,14 @@ const updateProfile = async (req, res) => {
       user: {
         id: user._id,
         namaPengguna: user.namaPengguna,
-        email: user.email
-      }
+        email: user.email,
+        profilePicture: user.profilePicture || null,
+      },
     });
   } catch (err) {
-    res.status(500).json({ message: "Terjadi kesalahan server", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Terjadi kesalahan server", error: err.message });
   }
 };
 
